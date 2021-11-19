@@ -1,7 +1,7 @@
 # Postman Contract Test Generator
 When building APIs, a common need is to validate the shape of the requests and responses. You want to verify the implementation of the API matches the definition document. This is typically done through *contract tests*, which exercise required fields, optional fields, and things like query and path parameters.
 
-[Postman](https://www.postman.com/) has the ability to group requests together and associate them to your API as a contract test. The intention of this feature is to build a [collection](https://www.postman.com/collection/) manually to add coverage to your API.
+[Postman](https://www.postman.com/) has the ability to group requests together and associate them to your API as a contract test. The intention of this feature is to build a [collection](https://www.postman.com/collection/) programmatically to add coverage to your API.
 
 # Objective
 To build an automated way to provide an exhaustive set of tests providing close to 100% coverage for contract tests. The **contract test generator** should not need to be maintained, it should be able to dynamically create all tests with every run based on the Open API Specification (OAS) document defining the API.
@@ -18,12 +18,12 @@ Every run, the generator will perform the following actions:
     * All parameters, schemas, and responses have `description` and `example` provided for every field
     * `Servers` are defined
     * User-defined governance settings configured in the *enviroment*
-* Build schema test array
+* Build an array of tests for each endpoint in the OAS
 * Loop through every test in the array and submit the request to the API
 * Validate status code and response body schema against OAS
 
-## Schema Test Definition
-For every path defined in the Open API Spec, a `json` object will be created in the following format to define the schema test:
+## Test Definition
+For every path defined in the Open API Spec, a `json` object describing a Postman test will be created in the following format:
 
 ```
 {
@@ -45,7 +45,7 @@ For every path defined in the Open API Spec, a `json` object will be created in 
 ```
 
 ## Test Generation
-The generator will build request bodies for each endpoint using the **example** provided for every property. If there is no example provided for an individual property, it will not be included in the request. Examples will be used for all parameters and schema properties.
+The generator will build request bodies for each endpoint using `example` data provided for each `property` in the OAS. If there is no example provided for an individual property, it will not be included in the request. Examples will be used for all parameters and schema properties.
 
 For accurate tests, it is advised *to use real values from your test environment in your examples* in order to get valid responses back during test execution. This means using known, hardcoded or seeded values in the system to define your API in the OAS.
 
@@ -114,25 +114,23 @@ The generator is building these tests to verify the implementation of the API ma
 
 
 # What It Does NOT Do
-The generator will **not** build a collection to be run at a later date. It builds and executes the tests at runtime, allowing for the test to dynamically update as changes are made to the Open API Spec.
+The generator will **not** build a collection to be run at a later date. It builds and executes the tests at runtime, allowing for the test to dynamically update as changes are made to the Open API Spec. You will be able to see the generated tests as they are executed in Postman.
 
 # Requirements
 The Open API Spec tested by the contract test generator is required to be in a specific format. Below are the minimum requirements for the tests to execute:
 
-* The `Servers` object is defined and has at least one server with a description
-* Every schema property must have an example defined
-* The following fields in the provided environment are configured
-    * `env-apiKey` - Integration API Key for Postman
-    * `env-workspaceId` - Identifier for the workspace that contains the API to be tested
-    * `env-requireParamExample` - Must be set to true (the collection will still run, but this will show you where any problems lie)
-    * `env-server` - Matches the description of the server to be tested in the `Servers` object
-* Request bodies are defined in the `#/components/schemas` section of the OAS and are referred to by using `$ref`
+* Every schema `property` must have an `example` defined
+* The following fields in the provided environment must be configured
+    * `env-apiKey` - must match an API Key for the Postman workspace
+    * `env-workspaceId` - must match the Identifier for the workspace that contains the API to be tested
+    * `env-requireParamExample` - Must be set to `true` (the collection will still run, but this will show you where any problems lie)
+    * `env-server` - must match the `description` of the server to be tested in the `Servers` object
+* Objects use in Request bodies must be defined in the `#/components/schemas` section of the OAS and referenced `$ref`
 
-# Authentication
-Authentication is the only piece of the generator that needs to be handled by the consumer. It is set up assuming all requests that execute against your API use the same authentication method.
+Authentication is the only piece of the generator that needs to be configured before generating tests. It is set up assuming all requests that execute against your API use the same authentication method.
 
 ## Configuration
-If your API uses authentication, you will be required to configure it on the collection itself.
+If your API uses authentication, you must configure it on the collection itself.
 
 1. Right click the collection in your Postman workspace and select **Edit**.
 2. Click on the **Authorization** tab and configure the type of Authentication your API requires.
